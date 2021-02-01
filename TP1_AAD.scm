@@ -155,4 +155,7 @@
                         (driver (abr-creer-vide)))
           (else (display "Fin du programme")))))
 
-(driver (abr-creer-vide))
+
+(define (start)
+  (driver (abr-creer-vide)))
+
