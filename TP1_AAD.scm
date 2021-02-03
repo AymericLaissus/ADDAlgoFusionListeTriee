@@ -42,6 +42,18 @@
     (and (abr-vide? (abr-fils-gauche ABR))
          (abr-vide? (abr-fils-droit ABR)))))
 
+;Vérifie que 2 ABR sont égaux
+(define abr-egalite?
+  (lambda (ABR ABR2)
+  (cond ((and (abr-vide? ABR) (abr-vide? ABR2)) #t)
+        ((and (abr-vide? ABR) (not (abr-vide? ABR2))) #f)
+        ((and (abr-vide? ABR2) (not (abr-vide? ABR))) #f)
+        (else 
+          (and (abr-egalite? (abr-fils-gauche ABR) (abr-fils-gauche ABR2))
+               (= (abr-valeur ABR) (abr-valeur ABR2))
+               (abr-egalite? (abr-fils-droit ABR) (abr-fils-droit ABR2)))))))
+
+
 ;Recherche le noeud le plus à gauche de l'ABR
 (define abr-fils-plusagauche
   (lambda (ABR)
@@ -60,13 +72,13 @@
       ((abr-vide? (abr-fils-gauche ABR)) (abr-fils-droit ABR))
       ((abr-vide? (abr-fils-droit ABR)) (abr-fils-gauche ABR))
       ; Si la racine a 2 enfants, il est remplacé par l'enfant le plus à gauche de l'enfant de droite
-      (else (let* ((replacement-value
+      (else (let* ((nouvelle-racine
                      (abr-valeur (abr-fils-plusagauche (abr-fils-droit ABR))))
-                   (new-right-subtree
-                     (abr-supp (abr-fils-droit ABR) replacement-value)))
-              (abr-creer replacement-value 
+                   (nouveau-fils-droit
+                     (abr-supp (abr-fils-droit ABR) nouvelle-racine)))
+              (abr-creer nouvelle-racine
                           (abr-fils-gauche ABR) 
-                          new-right-subtree))))))
+                          nouveau-fils-droit))))))
 
 ;Supprime un noeud s'il existe
 (define abr-supp
@@ -117,26 +129,44 @@
 
 ;Vérifie que le numéro de commande donné par l'utilisateur existe, si ce n'est pas le cas redemande à l'utilisateur de rentrer un numéro
 (define (read-command)
-(display "Enter choice [1-8] >")
+(display "Entrer choix [1-8] >")
 (let* ((in (read-line))
         (n (string->number in)))
-(cond ((<= 1 n 8) n)
+(cond ((<= 1 (if (integer? n) n -1) 8) n)
         (else
-        (display "Invalid choice \"")
+        (display "Choix invalide \"")
         (display in)
         (display "\"\n")
         (read-command)))))
+
+;vérifie que la valeur donnée par l'utilisateur est un entier
+(define (read-value ABR fct)
+  (let* ((in (read-line))
+        (n (string->number in)))
+(cond ((integer? n) (driver (fct ABR n)))
+        (else
+        (display "Valeur impossible \"")
+        (display in)
+        (display "\"\n")
+        (driver ABR)))))
 
 ;Controller principal, exécute les différentes commandes de l'utilisateur
 (define (driver ABR)
   (menu)
   (let ((choice (read-command)))
     (cond ((= choice 1) (display "Entrer la valeur à ajouter >")
-                        (driver (abr-ajout ABR (string->number (read-line)))))
+                        (read-value ABR abr-ajout))
           ((= choice 2) (display "Entrer la valeur à supprimer >")
-                        (driver (abr-supp ABR (string->number(read-line)))))
+                        (read-value ABR abr-supp))
           ((= choice 3) (display "Entrer la valeur à rechercher >")
-                        (display (abr-membre? ABR (string->number(read-line))))
+                        (let* ((in (read-line))
+                                (n (string->number in)))
+                              (cond ((integer? n) ;teste si la valeur est entière
+                                      (display (abr-membre? ABR (string->number(read-line)))))
+                                    (else
+                                      (display "Valeur impossible \"")
+                                      (display in)
+                                      (display "\"\n"))))
                         (display "\n")
                         (driver ABR))
           ((= choice 4) (display "parcours ordonné:\n\n")
